@@ -1,0 +1,170 @@
+---
+title: 'Custom Hooks'
+date: '2023-01-22'
+slug: 'custom-hooks'
+---
+
+import TabControl, { TabPanel } from '../../components/TabControl';
+
+# Custom Hooks
+
+Simply put, a custom hook is a function that uses some React hooks or other functions that contain React hooks (e.g. `useQuery` from Apollo Graphql). The prefix “use” in function hooks' name is a convention in React. It gives developers a hint that the functions contain some React hooks, and therefore they have to use it without breaking [the rules of hooks](https://reactjs.org/docs/hooks-rules.html).
+
+**Pros:**
+- Separation of Concerns
+  - It's achieved by encapsulation, which is a very common approach if you are very used to wrap lines of code that have the same intent into a function, method, or class.
+- Reusability
+
+**Cons:**
+- Carefulness
+  - It's not actually a downside, but still require developers to spend more time thinking of how to make a good hook. Otherwise, the code will still be a mess.
+
+## Test with React Testing Library
+TODO: test hooks with [`renderHook`](https://testing-library.com/docs/react-testing-library/api/#renderhook) from [React Testing Library](https://testing-library.com/).
+
+## Examples
+<TabControl tabLabels={['Toggle', 'Countdown']} />
+
+<TabPanel index={0}>
+  ### Example: a toggle hook
+
+  `useToggle.js`
+  ```jsx{numberLines:true}
+  import { useState, useCallback } from 'react';
+
+  const useToggle = (defaultState = false) => {
+    const [enabled, setEnabled] = useState(defaultState);
+
+    const toggle = useCallback(() => {
+      setEnabled(current => !current);
+    }, []);
+
+    return { enabled, toggle };
+  };
+
+  export default useToggle;
+  ```
+
+  `Content.jsx` (usage)
+  ```jsx{numberLines:true}
+  import React from 'react';
+  import useToggle from './useToggle.js';
+
+  const Content = () => {
+    const toggleState = useToggle(false);
+
+    return (
+      <div>
+        <p>Status: {countdown.status}</p>
+        <p>Seconds: {countdown.seconds}</p>
+        <p>
+          <label htmlFor="start">Start:</label>{' '}
+          <button
+            id="start"
+            name="start"
+            onClick={countdown.start}
+            disabled={countdown.status !== COUNTDOWN_STATUS.READY}
+          >
+            Toggle
+          </button>
+        </p>
+      </div>
+    );
+  };
+  ```
+</TabPanel>
+
+<TabPanel index={1}>
+  ### Example: a countdown hook
+
+  `useCountdown.js`
+  ```jsx{numberLines:true}
+  import { useState, useEffect, useCallback } from 'react';
+
+  export const COUNTDOWN_STATUS = {
+    READY: 'ready',
+    IN_PROGRESS: 'in_progress',
+    FINISHED: 'finished',
+  };
+
+  const useCountdown = (initialSeconds) => {
+    const [status, setStatus] = useState(COUNTDOWN_STATUS.READY);
+    const [seconds, setSeconds] = useState(initialSeconds);
+
+    useEffect(() => {
+      if (status !== COUNTDOWN_STATUS.IN_PROGRESS) return;
+      const intervalId = setInterval(() => {
+        setSeconds((currentSeconds) => {
+          const nextSeconds = currentSeconds - 1;
+          if (nextSeconds <= 0) {
+            setStatus(COUNTDOWN_STATUS.FINISHED);
+          }
+          return nextSeconds;
+        });
+      }, 1000);
+      return () => clearInterval(intervalId);
+    }, [status]);
+
+    const start = useCallback(() => {
+      if (status !== COUNTDOWN_STATUS.READY) return;
+      setStatus(COUNTDOWN_STATUS.IN_PROGRESS);
+    }, [status]);
+
+    const reset = useCallback(() => {
+      if (status === COUNTDOWN_STATUS.READY) return;
+      setSeconds(initialSeconds);
+      setStatus(COUNTDOWN_STATUS.READY);
+    }, [status]);
+
+    return {
+      status,
+      seconds,
+      start,
+      reset,
+    };
+  };
+
+  export default useCountdown;
+  ```
+
+  `Content.jsx` (usage)
+  ```jsx{numberLines:true}
+  import React from 'react';
+  import useCountdown, { COUNTDOWN_STATUS } from './useCountdown.js';
+
+  const Content = () => {
+    const countdown = useCountdown(10);
+
+    return (
+      <div>
+        <p>Status: {countdown.status}</p>
+        <p>Seconds: {countdown.seconds}</p>
+        <p>
+          <label htmlFor="start">Start:</label>{' '}
+          <button
+            id="start"
+            name="start"
+            onClick={countdown.start}
+            disabled={countdown.status !== COUNTDOWN_STATUS.READY}
+          >
+            Start
+          </button>
+        </p>
+        <p>
+          <label htmlFor="reset">Reset:</label>{' '}
+          <button
+            id="reset"
+            name="reset"
+            onClick={countdown.reset}
+            disabled={countdown.status === COUNTDOWN_STATUS.READY}
+          >
+            Reset
+          </button>
+        </p>
+      </div>
+    );
+  };
+
+  export default Content;
+  ```
+</TabPanel>
