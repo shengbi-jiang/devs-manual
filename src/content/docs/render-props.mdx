@@ -1,0 +1,124 @@
+---
+title: 'Render Props'
+date: '2023-02-14'
+slug: 'render-props'
+---
+
+import TabControl, { TabPanel } from '../../components/TabControl';
+
+# Render Props
+
+A render prop is a function prop that a component uses to know what to render.
+
+```jsx{numberLines:true}
+const Paw = ({ mouse }) => {
+  return (
+    <img
+      src="https://cdn-icons-png.flaticon.com/512/1076/1076928.png"
+      style={{ position: 'absolute', left: mouse.x, top: mouse.y, width: '32px', height: '32px' }} />
+  );
+};
+
+const Rocket = ({ mouse }) => {
+  return (
+    <img
+      src="https://cdn-icons-png.flaticon.com/512/1356/1356479.png"
+      style={{ position: 'absolute', left: mouse.x, top: mouse.y, width: '32px', height: '32px' }} />
+  );
+};
+
+const Mouse = ({ render }) => {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const handleMouseMove = (event) => {
+    setPosition({
+      x: event.clientX,
+      y: event.clientY
+    });
+  };
+
+  return (
+    <div style={{ height: '100vh' }} onMouseMove={handleMouseMove}>
+      {render(position)}
+    </div>
+  );
+};
+
+const MouseTracker = () => {
+  return (
+    <div>
+      <h1>Move the mouse around!</h1>
+      <Mouse render={mouse => (
+          <Paw mouse={mouse} />
+        )}/>
+    </div>
+  );
+};
+```
+
+Reference: [Render Props](https://reactjs.org/docs/render-props.html) from React
+
+## Caveats: Be careful when using Render Props with React.PureComponent or React.memo
+
+Remember to memoize the render function you passed in if you are using `React.PureComponent` or `React.memo`. Otherwise, the component you memoized will be re-rendered everytime.
+
+## Examples
+
+<TabControl tabLabels={['Formik', 'Layout']} />
+
+<TabPanel index={0}>
+
+```jsx{numberLines:true}
+import React from "react";
+import { Formik } from "formik";
+
+const BasicExample = () => (
+  <div>
+    <h1>My Form</h1>
+    <Formik
+      initialValues={{ name: "jared" }}
+      onSubmit={(values, actions) => {
+        setTimeout(() => {
+          alert(JSON.stringify(values, null, 2));
+
+          actions.setSubmitting(false);
+        }, 1000);
+      }}
+    >
+      {(props) => (
+        <form onSubmit={props.handleSubmit}>
+          <input
+            type="text"
+            onChange={props.handleChange}
+            onBlur={props.handleBlur}
+            value={props.values.name}
+            name="name"
+          />
+
+          {props.errors.name && <div id="feedback">{props.errors.name}</div>}
+
+          <button type="submit">Submit</button>
+        </form>
+      )}
+    </Formik>
+  </div>
+);
+```
+
+</TabPanel>
+
+<TabPanel index={1}>
+
+```jsx{numberLines:true}
+const Page = () => {
+  return (
+    <Layout
+      header={() => <NavigationHeader />}
+      sidebar={() => null}
+      body={() => <ArticleEditor />}
+      footer={() => <Footer />}
+    />
+  );
+};
+```
+
+</TabPanel>
