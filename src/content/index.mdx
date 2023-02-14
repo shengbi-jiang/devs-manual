@@ -6,39 +6,59 @@ slug: 'index'
 
 import ControlledAccordion from '../components/ControlledAccordion.tsx';
 
-Devs Manual
-===
+# Devs Manual
 
 <ControlledAccordion id="custom-hook" title="Custom Hooks">
-  `useToggle.js`
-  ```jsx{numberLines:true}
-  import { useState, useCallback } from 'react';
+`useToggle.js`
+```jsx{numberLines:true}
+import { useState, useCallback } from 'react';
 
-  const useToggle = (defaultState = false) => {
-    const [enabled, setEnabled] = useState(defaultState);
+const useToggle = (defaultState = false) => {
+const [enabled, setEnabled] = useState(defaultState);
 
     const toggle = useCallback(() => {
       setEnabled(current => !current);
     }, []);
 
     return { enabled, toggle };
-  };
 
-  export default useToggle;
-  ```
-  [Read More](/docs/custom-hooks)
+};
+
+export default useToggle;
+```
+[Read More](/docs/custom-hooks)
 </ControlledAccordion>
 
 <ControlledAccordion id="higher-order-component" title="Higher-Order Component">
-  Content
-  [Read More](/docs/higher-order-component)
+
+```jsx{numberLines:true}
+function withChangeLogger(WrappedComponent) {
+  const WithChangeLogger = ({ onChange = () => {}, ...restProps }) => {
+    const handleChange = useCallback((value) => {
+      Logger.log(value);
+      onChange(value);
+    }, [onChange]);
+    return <WrappedComponent onChange={handleChange} {...restProps} />;
+  };
+  WithChangeLogger.displayName = `WithChangeLogger(${getDisplayName(WrappedComponent)})`;
+
+  return WithChangeLogger;
+}
+
+function getDisplayName(WrappedComponent) {
+  return WrappedComponent.displayName || WrappedComponent.name || 'Component';
+}
+```
+
+[Read More](/docs/higher-order-component)
+
 </ControlledAccordion>
 
-
 <ControlledAccordion id="clean-code-or-preference" title="Clean Code or Preference?">
-  Content
+Content
 
-  [Clean Code vs Preference by Traversy Media](https://www.youtube.com/watch?v=ou6x2qcLOLI)
+[Clean Code vs Preference by Traversy Media](https://www.youtube.com/watch?v=ou6x2qcLOLI)
+
 </ControlledAccordion>
 
 <ControlledAccordion id="abc" title="Approaches to eliminate if-else or switch-case blocks">

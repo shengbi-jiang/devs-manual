@@ -8,10 +8,233 @@ import TabControl, { TabPanel } from '../../components/TabControl';
 
 # Higher Order Component
 
+```jsx{numberLines:true}
+// ==================== definition ====================
+function withProfile(WrappedComponent) {
+    const WithProfileComponent = (props) => {
+        const profile = getProfile();
+        return <WrappedComponent profile={profile} {...props} />;
+    }
+    WithProfileComponent.displayName = `withProfile(${getDisplayName(WrappedComponent)})`;
+
+    return WithProfileComponent;
+}
+
+function getDisplayName(component) {
+  return component.displayName || component.name || 'Component';
+}
+
+// ==================== usage ====================
+const EhancedProfileSection = withProfile(ProfileSection);
+
+function MyComponent() {
+    return (
+        <main>
+            {/* other sections ... */}
+            <EhancedProfileSection />
+        </main>
+    );
+}
+```
+
+It's basically the [decorator pattern](https://refactoring.guru/design-patterns/decorator).
+
+Sometimes, we use the format `withXXX` to name a higher-order component so that callers will know what it is.
+
+## Conventions
+
+- Pass Unrelated Props Through to the Wrapped Component
+- Maximizing Composability
+
+```jsx{numberLines:true}
+function connect(...enhancers) {
+    const reversedEnhancers = enhancers.reverse();
+
+    return (WrappedComponent) => {
+        return reversedEnhancers.reduce(
+            (IntermediateComponent, enhancer) => enhancer(IntermediateComponent),
+            WrappedComponent
+        );
+    }
+}
+
+// connect is a function that returns another function
+const enhance = connect(commentListSelector, commentListActions);
+
+// The returned function is a HOC, which returns a component that is connected
+// to the Redux store
+const ConnectedComment = enhance(CommentList);
+```
+
+- Wrap the Display Name for Easy Debugging
+
+## Caveat
+
+- Don't Mutate the Original Component. Use Composition.
+- Don't Use HOCs Inside the render Method
+- Static Methods Must Be Copied Over
+- Refs Aren't Passed Through
+
+Reference: [Higher-Order Component](https://reactjs.org/docs/higher-order-components.html) from React
+
 ## Examples
 
 <TabControl tabLabels={['Extra Modal']} />
 
 <TabPanel index={0}>
-  ### Extra Modal
+### Example: an extra modal
+Let's say we have some modal components asking users if they want to subscript to our website. There are two buttons in the modal: subscript and cancel. If a user clicks the subscript button, it redirects the user to the subscription page. If a user clicks the cancel button, the modal will be dismissed. Those components are used in multiple places in the website.
+
+`GeneralUpsellModal.jsx` (one of these modals)
+
+```jsx{numberLines:true}
+// imports and other stuff ...
+
+function GeneralUpsellModal({ open, onSubscript, onCancel }) {
+  return (
+    <Modal open={open}>
+      {/* ... */}
+      <Modal.Footer>
+        <Button onClick={onSubscript}>Subscript</Button>
+        <Button onClick={onCancel}>Cancel</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
+```
+
+`SomePage.jsx`
+
+```jsx{numberLines:true}
+// imports and other stuff ...
+
+function SomePage() {
+  // ...
+  const [isGeneralUpsellModalOpen, setIsGeneralUpsellModalOpen] = useState(false);
+  const handleSubscript = useCallback(() => {
+    /* ... redirect user to subscription page ... */
+  }, [/* ... */]);
+  const handleCancel = useCallback(() => {
+    setIsGeneralUpsellModalOpen(false);
+  }, []);
+
+  // ...
+  return (
+    <Container>
+      {/* ... */}
+      <GeneralUpsellModal open={isGeneralUpsellModalOpen} onSubscript={handleSubscript} onCancel={handleCancel} />
+    </Container>
+  );
+}
+```
+
+Assuming that we want some of these modals to be dismissed and open a modal called `SubscriptionModal` if a user clicks "Subscript" button, intuitively we would either add `SubscriptionModal` into those page components, or wrap them into new components and probably spend lot of time thinking of a good component name.
+
+`SomePage.jsx` (with 1st approach implemented)
+
+```jsx{numberLines:true}
+// imports and other stuff ...
+
+function SomePage() {
+  // ...
+  const [isGeneralUpsellModalOpen, setIsGeneralUpsellModalOpen] = useState(false);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const handleSubscript = useCallback(() => {
+    // do some other things ...
+    setIsSubscriptionModalOpen(true);
+    setIsGeneralUpsellModalOpen(false);
+    // ...
+  }, [/* ... */]);
+  const handleGeneralUpsellModalCancel = useCallback(() => {
+    setIsGeneralUpsellModalOpen(false);
+  }, []);
+  const handleSubscriptionModalCancel = useCallback(() => {
+    setIsSubscriptionModalOpen(false);
+  }, []);
+  // ...
+  return (
+    <Container>
+      {/* ... */}
+      <GeneralUpsellModal
+        open={isGeneralUpsellModalOpen}
+        onSubscript={handleSubscript}
+        onCancel={handleGeneralUpsellModalCancel}
+      />
+      <SubscriptionModal
+        open={isSubscriptionModalOpen}
+        onCancel={handleSubscriptionModalCancel}
+      />
+    </Container>
+  );
+}
+```
+
+For the first approach, it makes the components look messy, less cohesive, and has duplicated code in those page components. For the second one, although it may look better, we will still have duplicated code since we will have to create components for each modals that need to work with `SubscriptionModal`.
+
+In this case, we can create a higher-order component solve those problems:
+
+`withSubscriptionModal.jsx`
+
+```jsx{numberLines:true}
+// imports and other stuff ...
+
+function withSubscriptionModal(WrappedModal) {
+  return function WrappedModalWithSubscriptionModal({ open, onCancel, ...restProps }) {
+    const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+    const handleWrappedModalSubscript = useCallback(() => {
+      // do some other things ...
+      setIsSubscriptionModalOpen(true);
+      onCancel();
+      // ...
+    }, [/* ... */]);
+
+    const handleSubscriptionModalCancel = useCallback(() => {
+      setIsSubscriptionModalOpen(false);
+    }, []);
+
+    return (
+      <>
+        <WrappedModal open={open} onSubscript={handleWrappedModalSubscript} onCancel={onCancel} {...restProps} />
+        <SubscriptionModal open={isSubscriptionModalOpen} onCancel={handleSubscriptionModalCancel} />
+      </>
+    );
+  };
+}
+```
+
+Then, use it with target modals like the one below:
+
+`SomePage.jsx`
+
+```jsx{numberLines:true}
+// imports and other stuff ...
+
+// ... probably something like EnrichedGeneralUpsellModal would be a better name
+const GeneralUpsellAndSubscriptionModal = withSubscriptionModal(GeneralUpsellModal);
+
+function SomePage() {
+  // ...
+  const [isGeneralUpsellModalOpen, setIsGeneralUpsellModalOpen] = useState(false);
+  const handleSubscript = useCallback(() => {
+    /* ... redirect user to subscription page ... */
+  }, [/* ... */]);
+  const handleCancel = useCallback(() => {
+    setIsGeneralUpsellModalOpen(false);
+  }, []);
+
+  return (
+    <Container>
+      {/* ... */}
+      <GeneralUpsellAndSubscriptionModal
+        open={isGeneralUpsellModalOpen}
+        onSubscript={handleSubscript}
+        onCancel={handleCancel}
+      />
+    </Container>
+  );
+}
+```
+
+There may be a different or better way to implement the higher-order component (modal), depending on your use case.
+
 </TabPanel>
