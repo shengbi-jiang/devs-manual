@@ -1,0 +1,51 @@
+---
+title: 'Stacking Context'
+date: '2023-02-19'
+slug: 'css-stacking-context'
+---
+
+# Stacking Context
+
+Read the articles and documents below to understand what is stacking context and stacking order.
+
+- [What No One Told You About Z-Index — Philip Walton](https://philipwalton.com/articles/what-no-one-told-you-about-z-index/)
+- [The stacking context - CSS: Cascading Style Sheets | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context)
+- [Stacking without the z-index property - CSS: Cascading Style Sheets | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/Stacking_without_z-index)
+
+For the quiz in the first article above, I personal prefer to comment the HTML code in this format:
+
+```
+{stacking_context_1}: {stacking_order_1}.{appearance_order_1}, {stacking_context_2}: {stacking_order_2}.{appearance_order_2}, ...
+```
+
+Although the format is more complex, it states more clearly what the stacking order and appearance order in HTML of an element.
+
+`Before adding opacity`
+
+```html{numberLines:true}
+<!-- 1: 1.1 -->
+<div><!-- 1: 3.1 -->
+  <span class="red"><!-- 1: 5.1 --></span>
+</div>
+<div><!-- 1: 3.2 -->
+  <span class="green"><!-- 1: 4.1 --><span>
+</div>
+<div><!-- 1: 3.3 -->
+  <span class="blue"><!-- 1: 4.2 --></span>
+</div>
+```
+
+`After adding opacity`
+
+```html{numberLines:true}
+<!-- 1: 1.1 -->
+<div><!-- 1: 4.1, 2: 1.1 -->
+  <span class="red"><!-- 2: 5.1 --></span>
+</div>
+<div><!-- 1: 3.2 -->
+  <span class="green"><!-- 1: 4.2 --><span>
+</div>
+<div><!-- 1: 3.3 -->
+  <span class="blue"><!-- 1: 4.3 --></span>
+</div>
+```

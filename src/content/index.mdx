@@ -8,6 +8,8 @@ import ControlledAccordion from '../components/ControlledAccordion.tsx';
 
 # Devs Manual
 
+## React
+
 <ControlledAccordion id="custom-hook" title="Custom Hooks">
 `useToggle.js`
 ```jsx{numberLines:true}
@@ -65,6 +67,21 @@ function getDisplayName(WrappedComponent) {
 [Read More](/docs/render-props)
 
 </ControlledAccordion>
+
+## CSS
+
+<ControlledAccordion id="css-stacking-context" title="Stacking Context">
+  Stacking context (and stacking order) is crucial to understand how HTML elements are rendered in a certain order, which could result into some elements overlaping the other and could confuse you a lot. If you have experienced  setting some elements with `z-index: 9999999` but still getting overlapped by other elements with lower or no `z-index` value, I strongly recommend you to read the following articles and documents.
+
+- [What No One Told You About Z-Index — Philip Walton](https://philipwalton.com/articles/what-no-one-told-you-about-z-index/)
+- [The stacking context - CSS: Cascading Style Sheets | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context)
+- [Stacking without the z-index property - CSS: Cascading Style Sheets | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/Stacking_without_z-index)
+
+[Read More](/docs/css-stacking-context)
+
+</ControlledAccordion>
+
+## Clean Code
 
 <ControlledAccordion id="clean-code-or-preference" title="Clean Code or Preference?">
 TODO
